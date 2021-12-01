@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.db.models.fields import NullBooleanField
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from .forms import UserRegistrationForm
@@ -17,7 +18,13 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import wordnet 
 from django import forms
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt 
+import json
+from django.db import connection
+from django.http import JsonResponse
 
+curr = 0
+@csrf_exempt
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -39,14 +46,30 @@ def register(request):
         
     return render(request, {'form' : form})
 
-@login_required()
-def login_request(request):
-    r = request.get(url)
-    result = r.json()
-    print(result)
-        
+@csrf_exempt 
+def login_request(payload):
+    print("call api request login")
+    print(payload)
+    #print(json.loads(payload.body.decode('utf-8')))
+    # print(json.dumps(payload, separators=(',',':')))
+    print(json.loads(payload.body.decode("utf-8")))
+    response = JsonResponse(json.loads(payload.body.decode("utf-8")), safe = False)
+    x = json.loads(payload.body.decode("utf-8"))
+    #print(x['UserName'])
+    sql = "Select * from tracker_account where Username = \"{}\" and Password = \"{}\"".format(x['UserName'], x['password'])
+    #userid = Expenses.objects.raw(sql)
+    #print(userid)
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
+        row = cursor.fetchone()
+    
+    curr = row[0]
+    return (response)
+    
+
 
 def ocr(request):
+    print(curr)
     PHOTO = 'bill3.png'
     image=cv2.imread(PHOTO,0)
 
@@ -172,28 +195,34 @@ def ocr(request):
 
     Expenses.objects.raw(sql)
 
+@csrf_exempt 
 def logout_request(request):
     logout(request)
     messages.info(request, "Logged out successfully!")
     return redirect("templates\home.html")
 
+@csrf_exempt 
 def help(request):
     now = datetime.datetime.now()
     data = request.GET.get()
     return response(data)
 
+@csrf_exempt 
 def piechart(request):
+    print("inside")
     sql = "Select SUM(amount) from Expenses where MONTH(Date) = MONTH(CURRENT_DATE()) AND YEAR(columnName) = YEAR(CURRENT_DATE()) and User_Id = "
     key = "1"
+    print(curr)
     qu = sql+key
     test1 = Expenses.objects.raw(qu)
     test2 = Bank.objects.raw("Select budget from Bank where User_Id = key;")
     
     return response(test1)
 
+
 class accountList(generics.ListCreateAPIView):
     queryset = account.objects.all()
-    serializer_class = accountSerializer(queryset)
+    serializer_class = accountSerializer
     
 
 class accountDetail(generics.RetrieveUpdateDestroyAPIView):
