@@ -1,6 +1,5 @@
 from django.conf.urls import url
-from django.db.models.fields import NullBooleanField
-from django.http.response import HttpResponse, HttpResponseRedirect
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from .forms import UserRegistrationForm
 from .models import *
@@ -8,7 +7,6 @@ from .serializers import *
 from rest_framework import generics, response
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
-from django.contrib.auth.forms import AuthenticationForm
 import datetime
 import pytesseract
 import cv2
@@ -17,34 +15,37 @@ import re
 from nltk.tokenize import word_tokenize
 from nltk.corpus import wordnet 
 from django import forms
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt 
+from django.views.decorators.csrf import csrf_exempt 
 import json
 from django.db import connection
-from django.http import JsonResponse
-
+from django.http import JsonResponse, request
+import requests
 curr = 0
 @csrf_exempt
 def register(request):
     if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            userObj = form.cleaned_data
-            username = userObj['username']
-            email =  userObj['email']
-            password =  userObj['password']
-            if not (User.objects.filter(username=username).exists() or User.objects.filter(email=email).exists()):
-                User.objects.create_user(username, email, password)
-                user = authenticate(username = username, password = password)
-                login(request, user)
-                return HttpResponseRedirect('/')    
-            else:
-                raise forms.ValidationError('Looks like a username with that email or password already exists')
+        x = json.loads(request.body.decode("utf-8"))
+        print(x['Name'])
+    #     form = UserRegistrationForm(request.POST)
+    #     #print(form.errors,"\n", form.is_valid,"\n", form.data)
+    #     if form.is_valid():
+    #         userObj = form.cleaned_data
+    #         print(userObj)
+    #         username = userObj['username']
+    #         email =  userObj['email']
+    #         password =  userObj['password']
+    #         if not (User.objects.filter(username=username).exists() or User.objects.filter(email=email).exists()):
+    #             User.objects.create_user(username, email, password)
+    #             user = authenticate(username = username, password = password)
+    #             login(request, user)
+    #             return HttpResponseRedirect('/')    
+    #         else:
+    #             raise forms.ValidationError('Looks like a username with that email or password already exists')
                 
-    else:
-        form = UserRegistrationForm()
+    # else:
+    #     form = UserRegistrationForm()
         
-    return render(request, {'form' : form})
+    # return render(request, {'form' : form})
 
 @csrf_exempt 
 def login_request(payload):
@@ -55,21 +56,39 @@ def login_request(payload):
     print(json.loads(payload.body.decode("utf-8")))
     response = JsonResponse(json.loads(payload.body.decode("utf-8")), safe = False)
     x = json.loads(payload.body.decode("utf-8"))
-    #print(x['UserName'])
-    sql = "Select * from tracker_account where Username = \"{}\" and Password = \"{}\"".format(x['UserName'], x['password'])
-    #userid = Expenses.objects.raw(sql)
-    #print(userid)
+    print(x)
+    sql = "Select * from tracker_account where Username = \"{}\" and Password = \"{}\"".format(x['newEmail'], x['newPassword'])
+  
     with connection.cursor() as cursor:
         cursor.execute(sql)
         row = cursor.fetchone()
     
     curr = row[0]
+    print(curr)
+    #windows.localStorage.setItem('useridentity', curr)
     return (response)
-    
 
+@csrf_exempt 
+def expenseinput(payload):
+    print(payload)
+    print(json.loads(payload.body))
+    response = JsonResponse(json.loads(payload.body.decode("utf-8")), safe = False)
+    x = json.loads(payload.body)
+    print(x)
 
 def ocr(request):
-    print(curr)
+    # def APIresult(request):
+    #     import requests
+    #     import json
+    #     import praw
+    #     import re        
+    #     import datetime
+    #     import joblib
+    #     uploaded_file = request.FILES['document']
+    #     fs=FileSystemStorage()
+    #     fs.save(uploaded_file.name,uploaded_file)
+    #     f = open("media/"+uploaded_file.name, "r") 
+    
     PHOTO = 'bill3.png'
     image=cv2.imread(PHOTO,0)
 

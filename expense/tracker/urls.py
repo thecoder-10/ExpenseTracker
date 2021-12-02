@@ -16,7 +16,7 @@ urlpatterns = [
     path('user/', views.userList.as_view()),
     path('user/<int:pk>/', views.userDetail.as_view()),
 
-    path('expense/', views.expenseList.as_view()),
+    path('expense/', views.expenseinput, name="inpute"),
     path('expense/<int:pk>/', views.expenseDetail.as_view()),
 
     path('income/', views.incomeList.as_view()),
