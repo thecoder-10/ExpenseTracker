@@ -27,4 +27,6 @@ urlpatterns = [
 
     path('help/', views.help, name="help"),
     path('chart/', views.piechart, name="chart"),
+
+    path('upload/', views.ocr, name="chart"),
 ]

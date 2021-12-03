@@ -76,6 +76,7 @@ def expenseinput(payload):
     x = json.loads(payload.body)
     print(x)
 
+@csrf_exempt
 def ocr(request):
     # def APIresult(request):
     #     import requests
@@ -88,8 +89,11 @@ def ocr(request):
     #     fs=FileSystemStorage()
     #     fs.save(uploaded_file.name,uploaded_file)
     #     f = open("media/"+uploaded_file.name, "r") 
-    
-    PHOTO = 'bill3.png'
+    # r = requests.post("http://127.0.0.1:8000/login/")
+    # print(r.text)
+
+    r = requests.post("http://127.0.0.1:8000/upload/")
+    PHOTO = r.text
     image=cv2.imread(PHOTO,0)
 
     #convert it into text
